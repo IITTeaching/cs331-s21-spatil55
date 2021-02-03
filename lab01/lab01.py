@@ -22,7 +22,14 @@ def captured_output():
 
 # implement this function
 def is_perfect(n):
-    pass
+  sum = 0
+  for i in range(n):  
+    if n%(i+1)==0:
+      sum = sum + (i+1)
+  fin = sum - n
+  if fin==n:
+    return True
+  return False
 
 # (3 points)
 def test1():
@@ -40,7 +47,11 @@ def test1():
 
 # implement this function
 def multiples_of_3_and_5(n):
-    pass
+    sum = 0
+    for i in range(n):
+        if (i%3==0) or (i%5==0):
+            sum = sum + i
+    return sum
 
 # (3 points)
 def test2():
@@ -53,7 +64,13 @@ def test2():
 # EXERCISE 3
 #################################################################################
 def integer_right_triangles(p):
-    pass
+    total = 0
+    for a in range(1, p):
+        for b in range(a, p):         
+            for c in range(b+1, p):   
+                if (a**2 + b**2 == c**2) and (a + b + c == p):
+                   total = total + 1
+    return total
 
 def test3():
     tc = unittest.TestCase()
@@ -67,7 +84,33 @@ def test3():
 
 # implement this function
 def gen_pattern(chars):
-    pass
+    rev = chars[::-1]
+    count = 1
+    count2 = len(chars)-1
+    for i in range(len(chars)*2-1):
+        total = ""
+        part = rev[0:count]
+        part1 = ".".join(rev[0:count])
+        part2 = chars[count:]
+        part3 = rev[0:count-1]
+        part4 = part3[::-1]
+        
+        
+        parts = rev[0:count2]
+        parts1 = ".".join(rev[0:count2])
+        parts2 = chars[count2:]
+        parts3 = rev[0:count2-1]
+        parts4 = parts3[::-1]
+        if count>len(chars):
+            totals = parts + parts4
+            print(('.'.join(totals)).center((len(chars))*4-3,'.'))
+            count2 = count2-1
+        else:    
+            total = part + part4
+            print(('.'.join(total)).center((len(chars))*4-3,'.'))
+        
+        count = count + 1
+
 
 def test4():
     tc = unittest.TestCase()
