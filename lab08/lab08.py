@@ -24,10 +24,39 @@ class Heap:
 
     def heapify(self, idx=0):
         ### BEGIN SOLUTION
+        left = Heap._left(idx)
+        right = Heap._right(idx)
+
+        if right<len(self.data):
+          if self.key(self.data[right]) > self.key(self.data[idx]):
+            if self.key(self.data[left]) > self.key(self.data[right]):
+              self.data[idx], self.data[left] = self.data[left], self.data[idx]
+              self.heapify(left)
+            else:
+              self.data[idx], self.data[right] = self.data[right], self.data[idx]
+              self.heapify(right)
+
+          if self.key(self.data[left]) > self.key(self.data[idx]):
+            if self.key(self.data[left]) > self.key(self.data[right]):
+              self.data[idx], self.data[left] = self.data[left], self.data[idx]
+              self.heapify(left)
+            else:
+              self.data[idx], self.data[right] = self.data[right], self.data[idx]
+              self.heapify(right)
+              
+        if left<len(self.data):
+          if self.key(self.data[left]) > self.key(self.data[idx]):
+            self.data[idx], self.data[left] = self.data[left], self.data[idx]    
+       
         ### END SOLUTION
 
-    def add(self, x):
+    def add(self, x): 
         ### BEGIN SOLUTION
+        at = len(self.data)
+        self.data.append(x)
+        while self.key(self.data[Heap._parent(at)]) < self.key(self.data[at]) and at!=0:
+          self.data[at],self.data[Heap._parent(at)] = self.data[Heap._parent(at)], self.data[at]
+          at = Heap._parent(at)
         ### END SOLUTION
 
     def peek(self):
@@ -130,6 +159,27 @@ def test_key_heap_5():
 ################################################################################
 def running_medians(iterable):
     ### BEGIN SOLUTION
+    min_heap = Heap()
+    max_heap = Heap(key=lambda x: -x)
+    list_form = list(iterable)
+    median_list = [list_form[0]]
+    min_heap.add(list_form[0])
+    for i in list_form[1:]:
+      if i > min_heap.peek():
+        max_heap.add(i)
+      else:
+        min_heap.add(i)
+      if len(max_heap) > len(min_heap) + 1:
+        min_heap.add(max_heap.pop())
+      if len(max_heap) + 1 < len(min_heap):
+        max_heap.add(min_heap.pop())
+      if len(max_heap) == len(min_heap):
+        median_list.append((min_heap.peek()+max_heap.peek())/2)
+      elif len(max_heap) > len(min_heap):
+        median_list.append(max_heap.peek())
+      else:
+        median_list.append(min_heap.peek())
+    return median_list
     ### END SOLUTION
 
 ################################################################################
@@ -174,6 +224,15 @@ def test_median_3():
 ################################################################################
 def topk(items, k, keyf):
     ### BEGIN SOLUTION
+    revkey = lambda x: keyf(x) * -1
+    min_heap = Heap(key=revkey)
+    for j in items:
+      if k > len(min_heap):
+        min_heap.add(j)
+      if keyf(min_heap.peek()) < keyf(j):
+        min_heap.pop()
+        min_heap.add(j)
+    return min_heap.data[::-1]
     ### END SOLUTION
 
 ################################################################################
