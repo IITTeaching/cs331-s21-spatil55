@@ -1,10 +1,7 @@
-# Lab 10 - AVL Trees
+from unittest import TestCase
+import random
 
-## Overview
 
-For this lab you will complete the following implementation of the balanced (AVL) binary search tree data structure discussed in class. Note that you should *not* be implementing the map-based API described in the plain (unbalanced) BSTree notebook — i.e., nodes in the AVLTree will only contain a single value.
-
-```python
 class AVLTree:
     class Node:
         def __init__(self, val, left=None, right=None):
@@ -19,6 +16,9 @@ class AVLTree:
 
         def rotate_left(self):
             ### BEGIN SOLUTION
+            n = self.right
+            self.val, n.val = n.val, self.val
+            self.right, n.right, self.left, n.left = n.right, n.left, n, self.left
             ### END SOLUTION
 
         @staticmethod
@@ -26,7 +26,8 @@ class AVLTree:
             if not n:
                 return 0
             else:
-                return max(1+AVLTree.Node.height(n.left), 1+AVLTree.Node.height(n.right))
+                return max(1 + AVLTree.Node.height(n.left),
+                           1 + AVLTree.Node.height(n.right))
 
     def __init__(self):
         self.size = 0
@@ -35,16 +36,75 @@ class AVLTree:
     @staticmethod
     def rebalance(t):
         ### BEGIN SOLUTION
+        def balance_test(node):
+          return AVLTree.Node.height(node.left) - AVLTree.Node.height(node.right)
+        if balance_test(t)<0 and balance_test(t.right)>0:
+          t.right.rotate_right
+          t.rotate_left()
+          AVLTree.rebalance(t.left)
+
+        if balance_test(t)<0:
+          t.rotate_left()
+          AVLTree.rebalance(t.left)
+        
+        if balance_test(t)>0 and balance_test(t.left)<0:
+          t.left.rotate_left()
+          t.rotate_right()
+          AVLTree.rebalance(t.right)
+        
+        if balance_test(t)>0:
+          t.rotate_right()
+          AVLTree.rebalance(t.right)
+        
         ### END SOLUTION
 
     def add(self, val):
-        assert(val not in self)
+        assert (val not in self)
         ### BEGIN SOLUTION
+        def add_rec(node, key):
+          if node is None:
+            return self.Node(key)
+          if key < node.val:
+            node.left = add_rec(node.left, key)
+          if key > node.val:
+            node.right = add_rec(node.right, key)
+          AVLTree.rebalance(node)
+          return node
+
+        if self.size>0:
+          add_rec(self.root, val)
+        if self.size==0:
+          self.root = self.Node(val)
+        self.size+=1
         ### END SOLUTION
 
     def __delitem__(self, val):
-        assert(val in self)
+        assert (val in self)
         ### BEGIN SOLUTION
+        def delete_rec(node, key):
+          if key < node.val:
+            node.left = delete_rec(node.left, key)
+          if key > node.val:
+            node.right = delete_rec(node.right, key)
+          if key==node.val: 
+            if node is None:
+              return None
+            if node.left is None:
+              return node.right
+            if node.right is None:
+              return node.left
+            remove = node.right
+            while remove.left:
+              remove = remove.left
+            node.val = remove.val
+            node.right = delete_rec(node.right, remove.val)
+          
+          AVLTree.rebalance(node)
+          return node
+
+        self.root = delete_rec(self.root, val)
+        self.size-=1
+
         ### END SOLUTION
 
     def __contains__(self, val):
@@ -57,6 +117,7 @@ class AVLTree:
                 return contains_rec(node.right)
             else:
                 return True
+
         return contains_rec(self.root)
 
     def __len__(self):
@@ -68,29 +129,32 @@ class AVLTree:
                 yield from iter_rec(node.left)
                 yield node.val
                 yield from iter_rec(node.right)
+
         yield from iter_rec(self.root)
 
     def pprint(self, width=64):
         """Attempts to pretty-print this tree's contents."""
         height = self.height()
-        nodes  = [(self.root, 0)]
+        nodes = [(self.root, 0)]
         prev_level = 0
         repr_str = ''
         while nodes:
-            n,level = nodes.pop(0)
+            n, level = nodes.pop(0)
             if prev_level != level:
                 prev_level = level
                 repr_str += '\n'
             if not n:
-                if level < height-1:
-                    nodes.extend([(None, level+1), (None, level+1)])
-                repr_str += '{val:^{width}}'.format(val='-', width=width//2**level)
+                if level < height - 1:
+                    nodes.extend([(None, level + 1), (None, level + 1)])
+                repr_str += '{val:^{width}}'.format(val='-',
+                                                    width=width // 2**level)
             elif n:
-                if n.left or level < height-1:
-                    nodes.append((n.left, level+1))
-                if n.right or level < height-1:
-                    nodes.append((n.right, level+1))
-                repr_str += '{val:^{width}}'.format(val=n.val, width=width//2**level)
+                if n.left or level < height - 1:
+                    nodes.append((n.left, level + 1))
+                if n.right or level < height - 1:
+                    nodes.append((n.right, level + 1))
+                repr_str += '{val:^{width}}'.format(val=n.val,
+                                                    width=width // 2**level)
         print(repr_str)
 
     def height(self):
@@ -99,6 +163,153 @@ class AVLTree:
             if not t:
                 return 0
             else:
-                return max(1+height_rec(t.left), 1+height_rec(t.right))
+                return max(1 + height_rec(t.left), 1 + height_rec(t.right))
+
         return height_rec(self.root)
-```
+
+
+################################################################################
+# TEST CASES
+################################################################################
+def height(t):
+    if not t:
+        return 0
+    else:
+        return max(1 + height(t.left), 1 + height(t.right))
+
+
+def traverse(t, fn):
+    if t:
+        fn(t)
+        traverse(t.left, fn)
+        traverse(t.right, fn)
+
+
+# LL-fix (simple) test
+# 10 points
+def test_ll_fix_simple():
+    tc = TestCase()
+    t = AVLTree()
+
+    for x in [3, 2, 1]:
+        t.add(x)
+
+    tc.assertEqual(height(t.root), 2)
+    tc.assertEqual([t.root.left.val, t.root.val, t.root.right.val], [1, 2, 3])
+
+
+# RR-fix (simple) test
+# 10 points
+def test_rr_fix_simple():
+    tc = TestCase()
+    t = AVLTree()
+
+    for x in [1, 2, 3]:
+        t.add(x)
+
+    tc.assertEqual(height(t.root), 2)
+    tc.assertEqual([t.root.left.val, t.root.val, t.root.right.val], [1, 2, 3])
+
+
+# LR-fix (simple) test
+# 10 points
+def test_lr_fix_simple():
+    tc = TestCase()
+    t = AVLTree()
+
+    for x in [3, 1, 2]:
+        t.add(x)
+
+    tc.assertEqual(height(t.root), 2)
+    tc.assertEqual([t.root.left.val, t.root.val, t.root.right.val], [1, 2, 3])
+
+
+# RL-fix (simple) test
+# 10 points
+def test_rl_fix_simple():
+    tc = TestCase()
+    t = AVLTree()
+
+    for x in [1, 3, 2]:
+        t.add(x)
+
+    tc.assertEqual(height(t.root), 2)
+    tc.assertEqual([t.root.left.val, t.root.val, t.root.right.val], [1, 2, 3])
+
+
+# ensure key order is maintained after insertions and removals
+# 30 points
+def test_key_order_after_ops():
+    tc = TestCase()
+    vals = list(range(0, 100000000, 333333))
+    random.shuffle(vals)
+
+    t = AVLTree()
+    for x in vals:
+        t.add(x)
+
+    for _ in range(len(vals) // 3):
+        to_rem = vals.pop(random.randrange(len(vals)))
+        del t[to_rem]
+
+    vals.sort()
+
+    for i, val in enumerate(t):
+        tc.assertEqual(val, vals[i])
+
+
+# stress testing
+# 30 points
+def test_stress_testing():
+    tc = TestCase()
+
+    def check_balance(t):
+        tc.assertLess(abs(height(t.left) - height(t.right)), 2,
+                      'Tree is out of balance')
+
+    t = AVLTree()
+    vals = list(range(1000))
+    random.shuffle(vals)
+    for i in range(len(vals)):
+        t.add(vals[i])
+        for x in vals[:i + 1]:
+            tc.assertIn(x, t, 'Element added not in tree')
+        traverse(t.root, check_balance)
+
+    random.shuffle(vals)
+    for i in range(len(vals)):
+        del t[vals[i]]
+        for x in vals[i + 1:]:
+            tc.assertIn(x, t, 'Incorrect element removed from tree')
+        for x in vals[:i + 1]:
+            tc.assertNotIn(x, t, 'Element removed still in tree')
+        traverse(t.root, check_balance)
+
+
+################################################################################
+# TEST HELPERS
+################################################################################
+def say_test(f):
+    print(80 * "#" + "\n" + f.__name__ + "\n" + 80 * "#" + "\n")
+
+
+def say_success():
+    print("----> SUCCESS")
+
+
+################################################################################
+# MAIN
+################################################################################
+def main():
+    for t in [
+            test_ll_fix_simple, test_rr_fix_simple, test_lr_fix_simple,
+            test_rl_fix_simple, test_key_order_after_ops, test_stress_testing
+    ]:
+        say_test(t)
+        t()
+        say_success()
+    print(80 * "#" + "\nALL TEST CASES FINISHED SUCCESSFULLY!\n" + 80 * "#")
+
+
+if __name__ == '__main__':
+    main()
